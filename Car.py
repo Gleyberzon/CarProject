@@ -13,6 +13,7 @@ class Car:
         # Status of engine: 0 - off, 1 - on
         self.status = 0
         self.path = self.dc["LOG_PATH"]
+        Log(self.path, "*********** New Car Created ***********")
 
     def gear_up(self):
         """
@@ -72,26 +73,28 @@ class Car:
         self.gear = 0
         Log(self.path,self.dc["MESS_ENGINE_ON"])
 
-    def drive(self, val, gear):
+    def drive(self, km, gear):
         """
         Name: Roman Gleyberzon
         Date: 22/1/2023
         Description: This method makes car driving
-        Input: km, gaer
+        Input: km, gear
         Output: None
         """
         if (self.status == 0):
             self.start_driving()
-        elif not (isinstance(val, int) or isinstance(val, float)):
+        elif not (isinstance(km, int) or isinstance(km, float)):
             raise ValueError(self.dc["KM_NOT_VALID"])
-        elif val < 0:
+        elif km < 0:
             raise ValueError(self.dc["KM_NOT_VALID"])
         elif not (isinstance(gear, int) or isinstance(gear, float)):
             raise ValueError(self.dc["GEAR_NOT_VALID"])
         elif not (gear > 0 and gear < self.dc["MAX_GEAR"]+1):
             raise ValueError(self.dc["GEAR_NOT_VALID"])
-        if (val * self.fuel_consumption > self.fuel+self.money*self.fuel_consumption):
-            raise ValueError(self.dc["NOT_ENOUGH_FUEL_AND_MONEY"].format(val))
+        need_fuel_for_km = km * self.fuel_consumption
+        max_possible_fuel_amount = self.get_current_fuel() + self.money*self.dc["PRICE_FOR_1L"]
+        if (need_fuel_for_km > max_possible_fuel_amount):
+            raise ValueError(self.dc["NOT_ENOUGH_FUEL_AND_MONEY"].format(km))
         else:
             if (self.gear<gear):
                 while (self.gear != gear):
@@ -99,24 +102,22 @@ class Car:
             if (self.gear>gear):
                 while (self.gear != gear):
                     self.gear_down()
-            remain = val
-            while remain != 0:
-                if (remain<self.fuel):
-                    self.fuel -= remain
-                    remain = 0
+            remain_km = km
+            while remain_km != 0:
+                if (remain_km * self.fuel_consumption < self.fuel):
+                    self.fuel -= remain_km * self.fuel_consumption
+                    Log(self.path, "Passed {}km, remaining fuel {}L, remain money {}$".format(remain_km, self.fuel, self.money))
+                    remain_km = 0
                 else:
-                    passed_km = self.fuel*self.fuel_consumption
-                    remain -= self.fuel
-                    Log("Passed {}km, fuel ended, remain to pass {}km".format(passed_km, remain))
+                    passed_km = self.fuel/self.fuel_consumption
+                    remain_km -= self.fuel
+                    Log(self.path,"Passed {}km, fuel ended, remain to pass {}km".format(passed_km, remain_km))
                     self.fuel = 0
-                    self.add_fuel(self.money*self.dc["PRICE_FOR_1L"])
-
-
-
+                    self.add_fuel(self.money*self.dc["PRICE_FOR_1L"], self.dc["PRICE_FOR_1L"])
             speed = self.calc_current_speed()
-            time = val / speed
+            time = km / speed
             # Log
-            Log(self.path,self.dc["CAR_DRIVE_MESS"].format(val,time,speed))
+            Log(self.path, self.dc["CAR_DRIVE_MESS"].format(km, time, speed))
 
     def stop_driving(self):
         """
@@ -127,12 +128,12 @@ class Car:
         Output: None
         """
         if (self.status == 0):
-            raise SystemError(self.dc["ERR_ENGINE_OFF"])
+            Log(self.path, "Try to stop driving: warning - already stopped")
         else:
-            while (self.gear > 0):
-                self.gear_down()
-            self.status = 0
-            Log(self.path,self.dc["MESS_ENGINE_OFF"])
+            Log(self.path, self.dc["MESS_ENGINE_OFF"])
+        while (self.gear > 0):
+            self.gear_down()
+        self.status = 0
 
     def get_current_fuel(self):
         """
@@ -162,9 +163,9 @@ class Car:
             raise OverflowError(self.dc["ERR_FUEL_OVERFLOW"])
         else:
             if (amount + self.fuel> self.max_fuel):
-                Log(f"Current amount fuel: {self.fuel}L, max amount of fuel {self.max_fuel}L, tried to add {amount}L")
+                Log(self.path,f"Current amount fuel: {self.fuel}L, max amount of fuel {self.max_fuel}L, tried to add {amount}L")
                 new_amount = self.max_fuel - self.fuel
-                Log(f"Will add {new_amount}L")
+                Log(self.path,f"Will add {new_amount}L")
                 price = new_amount * price_for_litr
                 self.money -= price
                 self.fuel += new_amount

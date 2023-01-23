@@ -177,7 +177,7 @@ class MyTestCase(unittest.TestCase):
         try:
             with self.assertRaises(ValueError):
                 self.c.start_driving()
-                self.c.drive("A","B")
+                self.c.drive("A", "B")
             Log(self.path, self.dc["TEST_PASS"].format(self.dc["MESS_TEST_DRIVE"].format(4)))
         except:
             Log(self.path, self.dc["TEST_UNPASS"].format(self.dc["MESS_TEST_DRIVE"].format(4)))
@@ -188,7 +188,7 @@ class MyTestCase(unittest.TestCase):
         try:
             with self.assertRaises(ValueError):
                 self.c.start_driving()
-                self.c.drive(1,"B")
+                self.c.drive(1, "B")
             Log(self.path, self.dc["TEST_PASS"].format(self.dc["MESS_TEST_DRIVE"].format(5)))
         except:
             Log(self.path, self.dc["TEST_UNPASS"].format(self.dc["MESS_TEST_DRIVE"].format(5)))
@@ -199,7 +199,7 @@ class MyTestCase(unittest.TestCase):
         try:
             with self.assertRaises(ValueError):
                 self.c.start_driving()
-                self.c.drive("A",4)
+                self.c.drive("A", 4)
             Log(self.path, self.dc["TEST_PASS"].format(self.dc["MESS_TEST_DRIVE"].format(6)))
         except:
             Log(self.path, self.dc["TEST_UNPASS"].format(self.dc["MESS_TEST_DRIVE"].format(6)))
@@ -210,7 +210,7 @@ class MyTestCase(unittest.TestCase):
         try:
             with self.assertRaises(ValueError):
                 self.c.start_driving()
-                self.c.drive(10,7)
+                self.c.drive(10, 7)
             Log(self.path, self.dc["TEST_PASS"].format(self.dc["MESS_TEST_DRIVE"].format(7)))
         except:
             Log(self.path, self.dc["TEST_UNPASS"].format(self.dc["MESS_TEST_DRIVE"].format(7)))
@@ -220,7 +220,7 @@ class MyTestCase(unittest.TestCase):
     def test_drive_8(self):
         try:
             with self.assertRaises(SystemError):
-                self.c.drive(10,4)
+                self.c.drive(10, 4)
             Log(self.path, self.dc["TEST_PASS"].format(self.dc["MESS_TEST_DRIVE"].format(8)))
         except:
             Log(self.path, self.dc["TEST_UNPASS"].format(self.dc["MESS_TEST_DRIVE"].format(8)))

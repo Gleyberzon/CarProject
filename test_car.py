@@ -192,7 +192,7 @@ def test_drive_4(c):
     try:
         with pytest.raises(ValueError):
             c.start_driving()
-            c.drive("A","B")
+            c.drive("A", "B")
         Log(c.tpath, c.dc["TEST_PASS"].format(c.dc["MESS_TEST_DRIVE"].format(4)))
     except:
         Log(c.tpath, c.dc["TEST_UNPASS"].format(c.dc["MESS_TEST_DRIVE"].format(4)))
@@ -204,7 +204,7 @@ def test_drive_5(c):
     try:
         with pytest.raises(ValueError):
             c.start_driving()
-            c.drive(1,"B")
+            c.drive(1, "B")
         Log(c.tpath, c.dc["TEST_PASS"].format(c.dc["MESS_TEST_DRIVE"].format(5)))
     except:
         Log(c.path, c.dc["TEST_UNPASS"].format(c.dc["MESS_TEST_DRIVE"].format(5)))
@@ -216,7 +216,7 @@ def test_drive_6(c):
     try:
         with pytest.raises(ValueError):
             c.start_driving()
-            c.drive("A",4)
+            c.drive("A", 4)
         Log(c.tpath, c.dc["TEST_PASS"].format(c.dc["MESS_TEST_DRIVE"].format(6)))
     except:
         Log(c.tpath, c.dc["TEST_UNPASS"].format(c.dc["MESS_TEST_DRIVE"].format(6)))
@@ -228,7 +228,7 @@ def test_drive_7(c):
     try:
         with pytest.raises(ValueError):
             c.start_driving()
-            c.drive(10,7)
+            c.drive(10, 7)
         Log(c.tpath, c.dc["TEST_PASS"].format(c.dc["MESS_TEST_DRIVE"].format(7)))
     except:
         Log(c.tpath, c.dc["TEST_UNPASS"].format(c.dc["MESS_TEST_DRIVE"].format(7)))
@@ -239,7 +239,7 @@ def test_drive_7(c):
 def test_drive_8(c):
     try:
         with pytest.raises(SystemError):
-            c.drive(10,4)
+            c.drive(10, 4)
         Log(c.tpath, c.dc["TEST_PASS"].format(c.dc["MESS_TEST_DRIVE"].format(8)))
     except:
         Log(c.tpath, c.dc["TEST_UNPASS"].format(c.dc["MESS_TEST_DRIVE"].format(8)))
