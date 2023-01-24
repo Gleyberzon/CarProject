@@ -1,14 +1,13 @@
-import os
-from dotenv import load_dotenv
 from MyFunctions import *
+import warnings
 class Car:
     def __init__(self):
         load_dotenv()
         self.dc = get_vars()
-        self.fuel = self.dc["DEFAULT_FUEL"]
-        self.max_fuel = self.dc["DEFAULT_MAX_FUEL"]
-        self.fuel_consumption = self.dc["DEFAULT_FUEL_CONSUMPTION"]
-        self.money = self.dc["DEFAULT_MONEY"]
+        self.fuel = self.dc["DEFAULT_FUEL"] # L
+        self.max_fuel = self.dc["DEFAULT_MAX_FUEL"] #L
+        self.fuel_consumption = self.dc["DEFAULT_FUEL_CONSUMPTION"] # L/KM
+        self.money = self.dc["DEFAULT_MONEY"] # $
         self.gear = self.dc["DEFAULT_GEAR"]
         # Status of engine: 0 - off, 1 - on
         self.status = 0
@@ -30,7 +29,7 @@ class Car:
             # Log
             Log(self.path,self.dc["MESS_GEAR_UPED_TO"].format(self.gear))
         else:
-            raise OverflowError(self.dc["GEAR_ERR"].format("max"))
+            warnings.warn(self.dc["GEAR_ERR"].format(self.dc["MAX_GEAR"]), category=UserWarning)
 
     def gear_down(self):
         """
@@ -47,7 +46,7 @@ class Car:
             # Log
             Log(self.path,self.dc["MESS_GEAR_DOWNED_TO"].format(self.gear))
         else:
-            raise OverflowError(self.dc["GEAR_ERR"].format(0))
+            warnings.warn(self.dc["GEAR_ERR"].format(0))
 
     def calc_current_speed(self):
         """
@@ -68,7 +67,8 @@ class Car:
         Output: None
         """
         if self.status==1:
-            Log(self.path, "Try to start driving: warning - already started")
+            Log(self.path, self.dc["WARN_MESS_ALREADY_STARTED"])
+            warnings.warn(self.dc["WARN_MESS_ALREADY_STARTED"])
         self.status = 1
         self.gear = 0
         Log(self.path,self.dc["MESS_ENGINE_ON"])
@@ -88,13 +88,16 @@ class Car:
         elif km < 0:
             raise ValueError(self.dc["KM_NOT_VALID"])
         elif not (isinstance(gear, int) or isinstance(gear, float)):
-            raise ValueError(self.dc["GEAR_NOT_VALID"])
+            raise ValueError(self.dc["GEAR_NOT_VALID"].format(self.dc["MAX_GEAR"]))
         elif not (gear > 0 and gear < self.dc["MAX_GEAR"]+1):
-            raise ValueError(self.dc["GEAR_NOT_VALID"])
+            raise ValueError(self.dc["GEAR_NOT_VALID"].format(self.dc["MAX_GEAR"]))
+        Log(self.path, self.dc["TRY_TO_DRIVE"].format(km))
         need_fuel_for_km = km * self.fuel_consumption
-        max_possible_fuel_amount = self.get_current_fuel() + self.money*self.dc["PRICE_FOR_1L"]
+        max_possible_fuel_amount = self.fuel + self.money/self.dc["PRICE_FOR_1L"]
+        Log(self.path, self.dc["NEED_FUEL_MAX_POSSIBLE"].format(need_fuel_for_km,max_possible_fuel_amount))
         if (need_fuel_for_km > max_possible_fuel_amount):
-            raise ValueError(self.dc["NOT_ENOUGH_FUEL_AND_MONEY"].format(km))
+            warnings.warn(self.dc["NOT_ENOUGH_FUEL_AND_MONEY"].format(km))
+            Log(self.path, self.dc["NOT_ENOUGH_FUEL_AND_MONEY"].format(km))
         else:
             if (self.gear<gear):
                 while (self.gear != gear):
@@ -104,20 +107,21 @@ class Car:
                     self.gear_down()
             remain_km = km
             while remain_km != 0:
-                if (remain_km * self.fuel_consumption < self.fuel):
+                if (remain_km * self.fuel_consumption <= self.fuel):
                     self.fuel -= remain_km * self.fuel_consumption
-                    Log(self.path, "Passed {}km, remaining fuel {}L, remain money {}$".format(remain_km, self.fuel, self.money))
+                    Log(self.path, self.dc["DRIVE_LOG"].format(remain_km, self.fuel, self.money))
                     remain_km = 0
                 else:
                     passed_km = self.fuel/self.fuel_consumption
-                    remain_km -= self.fuel
-                    Log(self.path,"Passed {}km, fuel ended, remain to pass {}km".format(passed_km, remain_km))
+                    remain_km -= passed_km
+                    Log(self.path,self.dc["DRIVE_LOG_2"].format(passed_km, remain_km))
                     self.fuel = 0
                     self.add_fuel(self.money*self.dc["PRICE_FOR_1L"], self.dc["PRICE_FOR_1L"])
+
             speed = self.calc_current_speed()
-            time = km / speed
+            time = int(((km / speed)*100))/100
             # Log
-            Log(self.path, self.dc["CAR_DRIVE_MESS"].format(km, time, speed))
+            Log(self.path, self.dc["DRIVE_LOG_TOTAL"].format(km, time, speed, self.fuel, self.money))
 
     def stop_driving(self):
         """
@@ -128,22 +132,13 @@ class Car:
         Output: None
         """
         if (self.status == 0):
-            Log(self.path, "Try to stop driving: warning - already stopped")
+            Log(self.path, self.dc["WARN_MESS_ALREADY_STOPPED"])
         else:
+            while (self.gear > 0):
+                self.gear_down()
             Log(self.path, self.dc["MESS_ENGINE_OFF"])
-        while (self.gear > 0):
-            self.gear_down()
-        self.status = 0
+            self.status = 0
 
-    def get_current_fuel(self):
-        """
-        Name: Roman Gleyberzon
-        Date: 22/1/2023
-        Description: This method returns current remaining fuel
-        Input: Name
-        Output: None
-        """
-        return self.fuel
 
     def add_fuel(self, amount, price_for_litr):
         """
@@ -159,11 +154,13 @@ class Car:
             raise ValueError(self.dc["AMOUNT_ERR"])
         elif not (isinstance(price_for_litr, int) or isinstance(price_for_litr, float)):
             raise ValueError(self.dc["PRICE_ERR"])
+        elif price_for_litr<=0:
+            raise ValueError(self.dc["PRICE_ERR"])
         elif (amount * price_for_litr > self.money):
-            raise OverflowError(self.dc["ERR_FUEL_OVERFLOW"])
+            warnings.warn("NO_MONEY".format(amount, amount * price_for_litr, self.money))
         else:
             if (amount + self.fuel> self.max_fuel):
-                Log(self.path,f"Current amount fuel: {self.fuel}L, max amount of fuel {self.max_fuel}L, tried to add {amount}L")
+                Log(self.path,self.dc["FUEL_MONEY_MESS"].format(self.fuel,self.max_fuel,amount))
                 new_amount = self.max_fuel - self.fuel
                 Log(self.path,f"Will add {new_amount}L")
                 price = new_amount * price_for_litr
@@ -171,9 +168,10 @@ class Car:
                 self.fuel += new_amount
                 Log(self.path, self.dc["MESS_ADD_FUEL_SUCCSESS"].format(new_amount, price))
             else:
-                Log(f"Current amount fuel: {self.fuel}L, max amount of fuel {self.max_fuel}L, tried to add {amount}L")
+                Log(self.path,self.dc["FUEL_MONEY_MESS"].format(self.fuel,self.max_fuel,amount))
                 price = amount * price_for_litr
                 self.money -= price
                 self.fuel += amount
                 Log(self.path, self.dc["MESS_ADD_FUEL_SUCCSESS"].format(amount, price))
+            Log(self.path, self.dc["ADD_FUEL_TOTAL_LOG"].format(self.fuel, self.money))
 
